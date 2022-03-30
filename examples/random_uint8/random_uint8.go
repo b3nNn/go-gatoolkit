@@ -4,6 +4,7 @@ import (
 	"fmt"
 	gat "github.com/b3nNn/go-gatoolkit"
 	gatuint8 "github.com/b3nNn/go-gatoolkit/uint8"
+	"math"
 	"math/rand"
 	"time"
 )
@@ -28,18 +29,22 @@ func (f Fitness) Eval(individual gat.Individual) float64 {
 		panic("invalid individual")
 	}
 
-	return float64(target - ind.Gene.Val())
+	return 255. - math.Abs(float64(ind.Gene.Val()-target))
 }
 
 func main() {
-	rand.Seed(time.Now().UnixNano())
 	ga := gat.NewGeneticAlgorithm()
-	ga.Configure(5)
+	ga.Configure(10, 0.1)
 	ga.Genome = gatuint8.Genome{
 		Crosser: gatuint8.NewBlendCrossover(0.3),
 	}
 	ga.Fitness = Fitness{}
-	ga.Selection = &gatuint8.RankSelection{}
+	ga.Selection = gat.NewRankSelection(1)
+	ga.Stopper = gat.NewIterationStopper(20)
 
-	ga.Simulate()
+	population := ga.Simulate()
+
+	for i, ind := range population {
+		fmt.Printf("Selection #%d\t%.2f\n", i, ind.GetFitness())
+	}
 }

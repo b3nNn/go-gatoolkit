@@ -3,8 +3,17 @@ package uint8
 import (
 	"errors"
 	gat "github.com/b3nNn/go-gatoolkit"
-	"math/rand"
+	"gonum.org/v1/gonum/stat/distuv"
 )
+
+var dist distuv.Uniform
+
+func init() {
+	dist = distuv.Uniform{
+		Min: 0,
+		Max: 255,
+	}
+}
 
 type Genome struct {
 	Crosser IUInt8Crosser
@@ -12,7 +21,7 @@ type Genome struct {
 
 func (Genome) CreateIndividual() gat.Individual {
 	return &Individual{
-		Gene:    NewGene(uint8(rand.Intn(256))),
+		Gene:    NewGene(uint8(dist.Rand())),
 		fitness: 0,
 	}
 }
