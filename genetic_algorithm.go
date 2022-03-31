@@ -1,35 +1,39 @@
 package gat
 
 import (
-	"fmt"
 	"math/rand"
 )
 
 type GeneticAlgorithm struct {
 	Genome               IGenome
 	Fitness              IFitness
+	Muter                IMuter
 	Selection            ISelection
 	Stopper              IStopper
 	Population           []Individual
 	populationSize       int
 	crossoverProbability float64
+	mutationProbability  float64
 }
 
 func NewGeneticAlgorithm() *GeneticAlgorithm {
 	return &GeneticAlgorithm{
 		Genome:               nil,
 		Fitness:              nil,
+		Muter:                nil,
 		Selection:            nil,
 		Stopper:              nil,
 		Population:           []Individual{},
-		populationSize:       10,
-		crossoverProbability: 0.5,
+		populationSize:       0,
+		crossoverProbability: 0,
+		mutationProbability:  0,
 	}
 }
 
-func (g *GeneticAlgorithm) Configure(populationSize int, crossoverProbability float64) {
+func (g *GeneticAlgorithm) Configure(populationSize int, crossoverProbability float64, mutationProbability float64) {
 	g.populationSize = populationSize
 	g.crossoverProbability = crossoverProbability
+	g.mutationProbability = mutationProbability
 }
 
 func (g *GeneticAlgorithm) Simulate() []Individual {
@@ -42,27 +46,32 @@ func (g *GeneticAlgorithm) Simulate() []Individual {
 	}
 
 	for !mustStop {
-		nextGeneration := make([]Individual, 0)
+		offsprings := make([]Individual, 0)
 
-		if it == 0 {
-			nextGeneration = append(nextGeneration, population...)
-		} else {
+		if it > 0 {
 			for i := 0; i < len(population); {
 				if i+1 >= len(population) {
-					nextGeneration = append(nextGeneration, population[i])
+					offsprings = append(offsprings, population[i])
 					break
 				}
 
-				cp := 1 - g.crossoverProbability
-				r := rand.Float64()
-
-				if r >= cp {
+				if rand.Float64() < g.crossoverProbability {
 					o1, o2 := g.Genome.Crossover(population[i], population[i+1])
-					nextGeneration = append(nextGeneration, o1, o2)
+					offsprings = append(offsprings, o1, o2)
 					i += 2
 				} else {
-					nextGeneration = append(nextGeneration, population[i])
+					offsprings = append(offsprings, population[i])
 					i++
+				}
+			}
+
+			population = make([]Individual, 0)
+			for i := 0; i < len(offsprings); i++ {
+				if rand.Float64() < g.mutationProbability {
+					mut := g.Muter.Mutate(offsprings[i])
+					population = append(population, mut)
+				} else {
+					population = append(population, offsprings[i])
 				}
 			}
 		}
@@ -72,12 +81,8 @@ func (g *GeneticAlgorithm) Simulate() []Individual {
 			ind.SetFitness(fit)
 		}
 
-		population = g.Selection.Select(nextGeneration)
+		population = g.Selection.Select(population)
 		it++
-
-		for i, ind := range population {
-			fmt.Printf("Population #%d/%d\t%.2f\n", it, i, ind.GetFitness())
-		}
 
 		if g.Stopper != nil {
 			mustStop = g.Stopper.IsTerminated(it, population)

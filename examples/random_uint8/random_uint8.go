@@ -34,13 +34,14 @@ func (f Fitness) Eval(individual gat.Individual) float64 {
 
 func main() {
 	ga := gat.NewGeneticAlgorithm()
-	ga.Configure(10, 0.1)
+	ga.Configure(20, 0.8, 0.3)
 	ga.Genome = gatuint8.Genome{
 		Crosser: gatuint8.NewBlendCrossover(0.3),
 	}
 	ga.Fitness = Fitness{}
-	ga.Selection = gat.NewRankSelection(1)
-	ga.Stopper = gat.NewIterationStopper(20)
+	ga.Muter = gatuint8.NewRandomDeviationMuter(0, 1)
+	ga.Selection = gat.NewRankSelection(2)
+	ga.Stopper = gat.NewIterationStopper(5)
 
 	population := ga.Simulate()
 
