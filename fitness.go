@@ -1,5 +1,3 @@
 package gat
 
-type IFitness interface {
-	Eval(individual Individual) float64
-}
+type Fitness func(individual Individual) float64

@@ -6,7 +6,7 @@ import (
 
 type GeneticAlgorithm struct {
 	Genome               IGenome
-	Fitness              IFitness
+	Fitness              Fitness
 	Muter                IMuter
 	Selection            ISelection
 	Stopper              IStopper
@@ -36,7 +36,7 @@ func (g *GeneticAlgorithm) Configure(populationSize int, crossoverProbability fl
 	g.mutationProbability = mutationProbability
 }
 
-func (g *GeneticAlgorithm) Simulate() []Individual {
+func (g *GeneticAlgorithm) Simulate() *SimulationResult {
 	var mustStop bool
 	var it int
 	population := g.Population[:]
@@ -77,7 +77,7 @@ func (g *GeneticAlgorithm) Simulate() []Individual {
 		}
 
 		for _, ind := range population {
-			fit := g.Fitness.Eval(ind)
+			fit := g.Fitness(ind)
 			ind.SetFitness(fit)
 		}
 
@@ -89,5 +89,40 @@ func (g *GeneticAlgorithm) Simulate() []Individual {
 		}
 	}
 
-	return population
+	result := NewSimulationResult()
+	result.Population = population[:]
+	result.Iterations = it
+	result.Best = result.Population[0]
+
+	return result
+}
+
+func (g *GeneticAlgorithm) WithGenome(genome IGenome) *GeneticAlgorithm {
+	g.Genome = genome
+
+	return g
+}
+
+func (g *GeneticAlgorithm) WithFitness(fitness Fitness) *GeneticAlgorithm {
+	g.Fitness = fitness
+
+	return g
+}
+
+func (g *GeneticAlgorithm) WithMuter(muter IMuter) *GeneticAlgorithm {
+	g.Muter = muter
+
+	return g
+}
+
+func (g *GeneticAlgorithm) WithSelection(selection ISelection) *GeneticAlgorithm {
+	g.Selection = selection
+
+	return g
+}
+
+func (g *GeneticAlgorithm) WithStopper(stopper IStopper) *GeneticAlgorithm {
+	g.Stopper = stopper
+
+	return g
 }
