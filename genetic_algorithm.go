@@ -1,6 +1,7 @@
 package gat
 
 import (
+	"gonum.org/v1/gonum/stat/distuv"
 	"math/rand"
 )
 
@@ -39,7 +40,8 @@ func (g *GeneticAlgorithm) Configure(populationSize int, crossoverProbability fl
 func (g *GeneticAlgorithm) Simulate() *SimulationResult {
 	var mustStop bool
 	var it int
-	population := g.Population[:]
+	population := make([]Individual, len(g.Population))
+	copy(population, g.Population)
 
 	for len(population) < g.populationSize {
 		population = append(population, g.Genome.CreateIndividual())
@@ -55,7 +57,8 @@ func (g *GeneticAlgorithm) Simulate() *SimulationResult {
 					break
 				}
 
-				if rand.Float64() < g.crossoverProbability {
+				r := rand.Float64()
+				if r < g.crossoverProbability {
 					o1, o2 := g.Genome.Crossover(population[i], population[i+1])
 					offsprings = append(offsprings, o1, o2)
 					i += 2
@@ -66,8 +69,12 @@ func (g *GeneticAlgorithm) Simulate() *SimulationResult {
 			}
 
 			population = make([]Individual, 0)
+			dist := distuv.Uniform{
+				Min: 0,
+				Max: 1,
+			}
 			for i := 0; i < len(offsprings); i++ {
-				if rand.Float64() < g.mutationProbability {
+				if dist.Rand() < g.mutationProbability {
 					mut := g.Muter.Mutate(offsprings[i])
 					population = append(population, mut)
 				} else {

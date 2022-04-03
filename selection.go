@@ -1,7 +1,7 @@
 package gat
 
 import (
-	"math/rand"
+	"gonum.org/v1/gonum/stat/distuv"
 	"sort"
 )
 
@@ -21,7 +21,8 @@ func NewRankSelection(eliteSize int) *RankSelection {
 
 func (s *RankSelection) Select(population []Individual) []Individual {
 	var ranksSum float64
-	pop := population[:]
+	pop := make([]Individual, len(population))
+	copy(pop, population)
 	rankDistance := 1. / float64(len(pop))
 	ranks := make([]float64, 0)
 
@@ -37,11 +38,14 @@ func (s *RankSelection) Select(population []Individual) []Individual {
 
 	selection := make([]Individual, 0)
 	selection = append(selection, pop[:s.eliteSize]...)
-
 	limit := len(pop) - s.eliteSize
+	dist := distuv.Uniform{
+		Min: 0,
+		Max: 1,
+	}
 	for i := 0; i < limit; i++ {
 		var sum float64
-		rest := rand.Float64() * ranksSum
+		rest := dist.Rand() * ranksSum
 
 		for ii := 0; ii < len(pop); ii++ {
 			sum += ranks[ii]
