@@ -50,7 +50,7 @@ func Eval(individual gat.Individual) float64 {
 func main() {
 	ga := gat.NewGeneticAlgorithm()
 	ga.Configure(100, 0.6, 0.1, 4)
-	ga.WithGenome(gatfloat64slice.NewGenome(genLen, gatfloat64slice.NewBlendCrossover(0.6)))
+	ga.WithGenome(gatfloat64slice.NewGenome(genLen, gatfloat64slice.MaxFloat64, gatfloat64slice.SmallestNonzeroFloat64, gatfloat64slice.NewBlendCrossover(0.6)))
 	ga.WithFitness(Eval)
 	ga.WithMuter(gatfloat64slice.NewRandomDeviationMuter(genLen, 0, 1))
 	ga.WithSelection(gat.NewRankSelection(1))

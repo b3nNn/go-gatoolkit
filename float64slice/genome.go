@@ -11,24 +11,20 @@ const (
 	SmallestNonzeroFloat64 = 9.99e-10 // 1 / 2**(1023 - 1 + 52)
 )
 
-var dist distuv.Uniform
-
-func init() {
-	dist = distuv.Uniform{
-		Min: SmallestNonzeroFloat64,
-		Max: MaxFloat64,
-	}
-}
-
 type Genome struct {
 	geneLen int
 	Crosser IFloat64SliceCrosser
+	distrib distuv.Uniform
 }
 
-func NewGenome(geneLen int, crosser IFloat64SliceCrosser) *Genome {
+func NewGenome(geneLen int, min float64, max float64, crosser IFloat64SliceCrosser) *Genome {
 	return &Genome{
 		geneLen: geneLen,
 		Crosser: crosser,
+		distrib: distuv.Uniform{
+			Min: min,
+			Max: max,
+		},
 	}
 }
 
@@ -36,7 +32,7 @@ func (u Genome) CreateIndividual() gat.Individual {
 	g := make([]float64, u.geneLen)
 
 	for i := 0; i < u.geneLen; i++ {
-		g[i] = dist.Rand()
+		g[i] = u.distrib.Rand()
 	}
 
 	return &Individual{
