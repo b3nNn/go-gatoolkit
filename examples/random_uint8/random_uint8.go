@@ -32,7 +32,7 @@ func Eval(individual gat.Individual) float64 {
 
 func main() {
 	ga := gat.NewGeneticAlgorithm()
-	ga.Configure(10, 0.2, 0.8)
+	ga.Configure(10, 0.2, 0.8, 4)
 	ga.WithGenome(gatuint8.Genome{
 		Crosser: gatuint8.NewBlendCrossover(0.3),
 	})

@@ -3,6 +3,8 @@ package gat
 import (
 	"gonum.org/v1/gonum/stat/distuv"
 	"math/rand"
+	"sync"
+	"time"
 )
 
 type GeneticAlgorithm struct {
@@ -15,6 +17,7 @@ type GeneticAlgorithm struct {
 	populationSize       int
 	crossoverProbability float64
 	mutationProbability  float64
+	cpus                 int
 }
 
 func NewGeneticAlgorithm() *GeneticAlgorithm {
@@ -28,13 +31,15 @@ func NewGeneticAlgorithm() *GeneticAlgorithm {
 		populationSize:       0,
 		crossoverProbability: 0,
 		mutationProbability:  0,
+		cpus:                 0,
 	}
 }
 
-func (g *GeneticAlgorithm) Configure(populationSize int, crossoverProbability float64, mutationProbability float64) {
+func (g *GeneticAlgorithm) Configure(populationSize int, crossoverProbability float64, mutationProbability float64, cpus int) {
 	g.populationSize = populationSize
 	g.crossoverProbability = crossoverProbability
 	g.mutationProbability = mutationProbability
+	g.cpus = cpus
 }
 
 func (g *GeneticAlgorithm) Simulate() *SimulationResult {
@@ -47,8 +52,11 @@ func (g *GeneticAlgorithm) Simulate() *SimulationResult {
 		population = append(population, g.Genome.CreateIndividual())
 	}
 
+	rand.Seed(time.Now().UnixNano())
 	for !mustStop {
 		offsprings := make([]Individual, 0)
+
+		rand.Shuffle(len(population), func(i, j int) { population[i], population[j] = population[j], population[i] })
 
 		if it > 0 {
 			for i := 0; i < len(population); {
@@ -83,10 +91,24 @@ func (g *GeneticAlgorithm) Simulate() *SimulationResult {
 			}
 		}
 
-		for _, ind := range population {
-			fit := g.Fitness(ind)
-			ind.SetFitness(fit)
+		wg := new(sync.WaitGroup)
+		fitnessChan := make(chan *Individual)
+		for i := 0; i < g.cpus; i++ {
+			go (func(wg *sync.WaitGroup, fitnessChan chan *Individual) {
+				for ind := range fitnessChan {
+					fit := g.Fitness(*ind)
+					(*ind).SetFitness(fit)
+					defer wg.Done()
+				}
+			})(wg, fitnessChan)
 		}
+
+		for i := 0; i < len(population); i++ {
+			wg.Add(1)
+			fitnessChan <- &population[i]
+		}
+		close(fitnessChan)
+		wg.Wait()
 
 		population = g.Selection.Select(population)
 		it++

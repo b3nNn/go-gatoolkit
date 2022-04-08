@@ -6,19 +6,19 @@ import (
 	"gonum.org/v1/gonum/stat/distuv"
 )
 
-var (
-	gaussDist distuv.Normal
-)
+var ()
 
 type RandomDeviationMuter struct {
-	mu    float64
-	sigma float64
+	deviations int
+	mu         float64
+	sigma      float64
 }
 
-func NewRandomDeviationMuter(mu float64, sigma float64) *RandomDeviationMuter {
+func NewRandomDeviationMuter(deviations int, mu float64, sigma float64) *RandomDeviationMuter {
 	return &RandomDeviationMuter{
-		mu:    mu,
-		sigma: sigma,
+		deviations: deviations,
+		mu:         mu,
+		sigma:      sigma,
 	}
 }
 
@@ -28,12 +28,24 @@ func (r *RandomDeviationMuter) Mutate(individual gat.Individual) gat.Individual 
 		panic(errors.New("invalid individual"))
 	}
 
-	dist := distuv.Normal{Mu: r.mu, Sigma: r.sigma}
+	gaussDist := distuv.Normal{Mu: r.mu, Sigma: r.sigma}
 	mut := make([]float64, len(ind.GetGene().Val()))
 
 	copy(mut, ind.GetGene().Val())
-	ra := dist.Rand()
-	for i := 0; i < len(mut); i++ {
+
+	idx := make(map[int]bool, r.deviations)
+
+	dist := distuv.Uniform{Min: 0, Max: float64(len(mut))}
+	for len(idx) < r.deviations {
+		i := int(dist.Rand())
+
+		if _, ok := idx[i]; !ok {
+			idx[i] = true
+		}
+	}
+
+	for i, _ := range idx {
+		ra := gaussDist.Rand()
 		mut[i] = mut[i] + ra
 	}
 
